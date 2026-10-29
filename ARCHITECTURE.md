@@ -722,4 +722,4 @@ npm run dev     # Vite dev server on http://localhost:5173
 
 ---
 
-*Document version 1.0 — generated for the Project:John simulation architecture review. All artifacts under C:\Users\Parzival\Documents\sysdesk\.*
+*Document version 1.0 — generated for the Project:John simulation architecture review. All artifacts under C:\Users\Parzival\Documents\project-john\.*
