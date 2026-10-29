@@ -1,7 +1,7 @@
 {
-  "name": "sysdesk",
+  "name": "project-john",
   "version": "1.0.0",
-  "description": "Browser-based IT help desk simulator for technician training — SysDesk",
+  "description": "Browser-based IT help desk simulator for technician training — Project:John",
   "main": "index.js",
   "scripts": {
     "test": "vitest run",

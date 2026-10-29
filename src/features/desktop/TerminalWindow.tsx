@@ -35,7 +35,7 @@ export function TerminalWindow({ windowId }: TerminalWindowProps) {
 
   // Greeting + first prompt once the terminal is mounted.
   useEffect(() => {
-    term.current?.writeln(`SysDesk remote shell — ${machineId}`);
+    term.current?.writeln(`Project:John remote shell — ${machineId}`);
     if (!connected) term.current?.writeln('Not connected to a lab session; commands will not run.');
     term.current?.write(prompt);
     // Only on mount: later connection changes are reported inline.

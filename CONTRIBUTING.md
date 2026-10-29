@@ -1,6 +1,6 @@
-# Contributing to SysDesk Simulator
+# Contributing to Project:John
 
-Thank you for considering contributing to Sysdesk! This is an open-source browser-based IT help desk simulator for technician training.
+Thank you for considering contributing to Project:John! This is an open-source browser-based IT help desk simulator for technician training.
 
 ## Development Setup
 

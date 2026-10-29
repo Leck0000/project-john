@@ -2,8 +2,8 @@
 
 ## Key Generation
 - Generate Ed25519 key pair once per profile
-- Private key: `~/.config/sysdesk/ed25519_private.pem` (chmod 0400)
-- Public key: `~/.config/sysdesk/ed25519_public.pem`
+- Private key: `~/.config/project-john/ed25519_private.pem` (chmod 0400)
+- Public key: `~/.config/project-john/ed25519_public.pem`
 
 ## Certificate Signing Pipeline
 1. **Build payload** (the "what" that gets signed):

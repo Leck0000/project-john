@@ -173,7 +173,7 @@ SandboxInstance {
 }
 ```
 
-### Ticket/Task Queue (for SysDesk-style)
+### Ticket/Task Queue (for Project:John)
 ```typescript
 Ticket {
   id, title, description, priority, category,
@@ -252,7 +252,7 @@ POST /api/content/labs/validate { yamlContent }
 
 ---
 
-## 6. SPECIFIC TECHNIQUES FOR SYSDESK
+## 6. SPECIFIC TECHNIQUES FOR PROJECT:JOHN
 
 ### Browser-Based Windows Desktop (Simulated)
 - **Win11React pattern**: Redux store with slices: `desktop`, `taskbar`, `windows`, `filesystem`, `apps`, `settings`
@@ -284,7 +284,7 @@ POST /api/content/labs/validate { yamlContent }
 
 ---
 
-## 7. RECOMMENDED STACK FOR SYSDESK
+## 7. RECOMMENDED STACK FOR PROJECT:JOHN
 
 | Layer | Recommendation | Rationale |
 |-------|----------------|-----------|
