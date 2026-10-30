@@ -85,15 +85,23 @@ These notes tell you what the rest of the app expects back.
 
 ### Where mistakes show up
 
-- `handleCommand()` throws, or returns an invalid result (for example an
-  `exitCode` that is not an integer): the terminal shows an
-  `Engine error: …` line with exit code 1.
-- An invalid `ticket`, `scoring` or `updates` entry (a non-UUID id, a bad
-  score, an unknown state): that one message is dropped and logged with
-  `console.error` in the browser console only. Nothing appears in the UI, so
-  keep the developer tools console open.
-- `start()` throws: the session still connects and commands still work, but
-  the panels get no snapshot; the error is in the browser console.
+- **In the terminal:** `handleCommand()` throws, or returns an invalid
+  command result (for example an `exitCode` that is not an integer). You get
+  an `Engine error: …` line with exit code 1.
+- **In the browser console only:** a `ticket` or `scoring` with a non-UUID
+  `ticketId`, or a score that is not an integer from 0 to 100. That one
+  message is dropped and logged with `console.error`; nothing appears in the
+  UI, so keep the developer tools console open.
+- **In the panel:** an `updates` entry whose `value` has the wrong shape still
+  reaches the panel, which then shows "Unexpected <subsystem> data from
+  server" (see *Subsystem shapes* above).
+- **Nowhere — check these yourself:** a misspelled subsystem key in `updates`
+  (it is stored, but no panel reads it), a `ticket.state` that is not one of
+  the five ticket states (the `TicketState` type catches this when you
+  compile), and a `ticket.ticketId` that is a valid UUID but matches no ticket.
+  All three are ignored without any message.
+- **`start()` throws:** the session still connects and commands still work,
+  but the panels get no snapshot; the error is in the browser console.
 
 ### Checking your work
 
