@@ -8,8 +8,10 @@ import type { UnknownAction } from '@reduxjs/toolkit';
 import { WSClient } from './client';
 import { parseEnvelope, createEnvelope } from './envelope';
 import { ServerEventType, ClientEventType, WSActionType } from './events';
-import type { WSClientConfig } from './client';
+import type { WSClientConfig, SocketLike } from './client';
 import { FakeSocket } from '../../test/fakeWebSocket';
+import { LocalSocket, createLocalSocketFactory } from './localSocket';
+import type { SimEngine } from '../../engine/types';
 
 const SESSION_ID = '1b84c7d2-9b0e-4527-bd82-ef0c2f5b6a1d';
 
@@ -204,6 +206,81 @@ describe('WSClient', () => {
       connect();
       client.disconnect();
       expect(listener).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('socket injection', () => {
+    const fakeEngine = (): SimEngine => ({
+      start: vi.fn(() => []),
+      handleCommand: vi.fn(() => ({ output: '', exitCode: 0 })),
+    });
+
+    it('LocalSocket is assignable to SocketLike without a cast', () => {
+      const check: SocketLike = new LocalSocket('local://sim', fakeEngine());
+      check.close();
+      expect(check.readyState).toBe(LocalSocket.CLOSED);
+    });
+
+    it('uses createSocket when provided', () => {
+      // FakeSocket's binaryType/onerror are looser than SocketLike; the client only uses the shared shape.
+      const created = new FakeSocket('ws://injected') as unknown as SocketLike;
+      const createSocket = vi.fn((_url: string, _protocols: string[]): SocketLike => created);
+      const WebSocketSpy = vi.fn();
+      vi.stubGlobal('WebSocket', Object.assign(WebSocketSpy, { OPEN: 1, CLOSED: 3 }));
+      WSClient.resetInstance();
+      client = WSClient.getInstance({ ...config, protocols: ['sim.v1'], createSocket });
+      void client.connect().catch(() => {});
+      expect(createSocket).toHaveBeenCalledTimes(1);
+      expect(createSocket).toHaveBeenCalledWith('ws://localhost:8080/ws?token=test-token-123', ['sim.v1']);
+      expect(WebSocketSpy).not.toHaveBeenCalled();
+    });
+
+    it('full handshake over LocalSocket', async () => {
+      WSClient.resetInstance();
+      client = WSClient.getInstance({ url: 'local://sim', createSocket: createLocalSocketFactory(fakeEngine()) });
+      const p = client.connect();
+      await vi.advanceTimersByTimeAsync(10);
+      await expect(p).resolves.toEqual({ sessionId: expect.any(String), capabilities: ['local-sim'] });
+      expect(client.isConnected()).toBe(true);
+    });
+
+    it('still reports the close after a plain disconnect()', async () => {
+      WSClient.resetInstance();
+      client = WSClient.getInstance({ url: 'local://sim', createSocket: createLocalSocketFactory(fakeEngine()) });
+      client.setStore((a) => actions.push(a), () => ({ auth: {} }));
+      const p = client.connect();
+      await vi.advanceTimersByTimeAsync(10);
+      await p;
+      client.disconnect();
+      await vi.advanceTimersByTimeAsync(10);
+      expect(actions).toContainEqual({ type: WSActionType.DISCONNECTED, payload: { code: 1000, reason: 'Client disconnect', wasClean: true } });
+      expect(actions.some((a) => a.type === WSActionType.RECONNECTING)).toBe(false);
+    });
+
+    it('ignores the close of a replaced socket after disconnect() + connect()', async () => {
+      WSClient.resetInstance();
+      const createSocket = vi.fn(createLocalSocketFactory(fakeEngine()));
+      client = WSClient.getInstance({ url: 'local://sim', createSocket });
+      client.setStore((a) => actions.push(a), () => ({ auth: {} }));
+      const first = client.connect();
+      await vi.advanceTimersByTimeAsync(10);
+      const firstSession = (await first).sessionId;
+
+      client.disconnect(); // old socket's onclose is now pending (async)
+      actions.length = 0;
+      const second = client.connect();
+      await vi.advanceTimersByTimeAsync(10); // old onclose fires, then the new socket opens
+
+      const { sessionId } = await second;
+      expect(sessionId).not.toBe(firstSession);
+      expect(client.getSessionId()).toBe(sessionId);
+      expect(client.isConnected()).toBe(true);
+      expect(actions.some((a) => a.type === WSActionType.RECONNECTING)).toBe(false);
+      expect(actions.some((a) => a.type === WSActionType.DISCONNECTED)).toBe(false);
+
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(createSocket).toHaveBeenCalledTimes(2);
+      expect(client.getSessionId()).toBe(sessionId);
     });
   });
 });
