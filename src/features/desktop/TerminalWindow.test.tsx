@@ -39,7 +39,7 @@ vi.mock('@xterm/xterm', () => ({
 vi.mock('@xterm/addon-fit', () => ({ FitAddon: class { fit() {} } }));
 vi.mock('@xterm/addon-web-links', () => ({ WebLinksAddon: class {} }));
 
-function setup(connected: boolean) {
+function setup(connected: boolean, machineId = 'm1') {
   const actions: string[] = [];
   const payloads: unknown[] = [];
   const recorder: Middleware = () => (next) => (action) => {
@@ -53,7 +53,7 @@ function setup(connected: boolean) {
     preloadedState: { ws: { ...initialWSState, connected, sessionId: connected ? 's1' : null } },
     middleware: (gdm) => gdm().concat(recorder),
   });
-  store.dispatch(openAppWindow({ app: 'Terminal', title: 'Terminal', machineId: 'm1' }));
+  store.dispatch(openAppWindow({ app: 'Terminal', title: 'Terminal', machineId }));
   const win = store.getState().desktop.windows[0];
   if (!win) throw new Error('no window');
   render(
@@ -76,6 +76,11 @@ describe('TerminalWindow', () => {
     const region = screen.getByRole('region', { name: 'Terminal for m1' });
     expect(region).toHaveAttribute('data-testid', 'terminal');
     expect(screen.getByTestId('terminal-window')).toContainElement(region);
+  });
+
+  it('labels the terminal with the hostname, not the raw machine UUID', () => {
+    setup(false, '3e1a0c2b-7d4f-4a6e-9b8c-5d2f1e0a7b03');
+    expect(screen.getByRole('region', { name: 'Terminal for ws-hr-02' })).toBeInTheDocument();
   });
 
   it('applies CSS variable theming', () => {
@@ -109,6 +114,14 @@ describe('TerminalWindow', () => {
     act(() => term.type('dir\r'));
     expect(term.out.join('')).toContain('(offline) command not sent');
     expect(actions).not.toContain(WSActionType.SEND);
+  });
+
+  it('shows the machine hostname, not its id, in the greeting and prompt', () => {
+    const { term } = setup(false, '3e1a0c2b-7d4f-4a6e-9b8c-5d2f1e0a7b03');
+    const text = term.out.join('');
+    expect(text).toContain('remote shell — ws-hr-02');
+    expect(text).toContain('ws-hr-02> ');
+    expect(text).not.toContain('3e1a0c2b-7d4f-4a6e-9b8c-5d2f1e0a7b03> ');
   });
 
   it('sends the typed line as send_command on Enter when connected', () => {

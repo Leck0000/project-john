@@ -13,6 +13,7 @@ import { useEffect, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { Terminal, type TerminalHandle } from '../../shared/components/Terminal';
 import { wsSend, createSendCommand, ClientEventType } from '../../shared/ws/events';
+import { machineLabel } from '../../app/demo';
 
 export interface TerminalWindowProps {
   windowId: string;
@@ -31,11 +32,12 @@ export function TerminalWindow({ windowId }: TerminalWindowProps) {
   const term = useRef<TerminalHandle>(null);
   const line = useRef('');
   const written = useRef(0);
-  const prompt = `${machineId}> `;
+  const hostname = machineLabel(machineId);
+  const prompt = `${hostname}> `;
 
   // Greeting + first prompt once the terminal is mounted.
   useEffect(() => {
-    term.current?.writeln(`Project:John remote shell — ${machineId}`);
+    term.current?.writeln(`Project:John remote shell — ${hostname}`);
     if (!connected) term.current?.writeln('Not connected to a lab session; commands will not run.');
     term.current?.write(prompt);
     // Only on mount: later connection changes are reported inline.
@@ -85,7 +87,7 @@ export function TerminalWindow({ windowId }: TerminalWindowProps) {
       data-testid="terminal-window"
       style={{ height: '100%', padding: 6, backgroundColor: 'var(--bg)', color: 'var(--fg)' }}
     >
-      <Terminal ref={term} ariaLabel={`Terminal for ${machineId}`} onData={onData} />
+      <Terminal ref={term} ariaLabel={`Terminal for ${hostname}`} onData={onData} />
     </div>
   );
 }

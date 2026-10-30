@@ -31,6 +31,18 @@ import {
   ClientEventType,
 } from './events';
 
+/** The subset of the WebSocket API that WSClient uses (real sockets and LocalSocket). */
+export interface SocketLike {
+  readonly readyState: number;
+  binaryType: BinaryType;
+  send(data: string): void;
+  close(code?: number, reason?: string): void;
+  onopen: (() => void) | null;
+  onclose: ((event: { code: number; reason: string; wasClean: boolean }) => void) | null;
+  onerror: (() => void) | null;
+  onmessage: ((event: { data: string | ArrayBuffer }) => void) | null;
+}
+
 /** Configuration options for WSClient */
 export interface WSClientConfig {
   /** WebSocket server URL */
@@ -49,9 +61,20 @@ export interface WSClientConfig {
   reconnectMaxDelay?: number;
   /** Max reconnection attempts (default: 10) */
   maxReconnectAttempts?: number;
+  /** Socket factory (default: `new WebSocket(url, protocols)`); inject LocalSocket for the in-browser sim. */
+  createSocket?: (url: string, protocols: string[]) => SocketLike;
 }
 
-type ResolvedConfig = Required<Omit<WSClientConfig, 'accessToken'>> & Pick<WSClientConfig, 'accessToken'>;
+type ResolvedConfig = Required<Omit<WSClientConfig, 'accessToken' | 'createSocket'>> &
+  Pick<WSClientConfig, 'accessToken' | 'createSocket'>;
+
+/**
+ * Default factory. DOM handler types declare a `this: WebSocket` parameter and
+ * DOM event types, which TS does not treat as assignable to SocketLike's plain
+ * handler fields; the runtime shape is compatible, hence the cast.
+ */
+const createWebSocket = (url: string, protocols: string[]): SocketLike =>
+  new WebSocket(url, protocols) as unknown as SocketLike;
 
 const DEFAULT_CONFIG: Omit<ResolvedConfig, 'url'> = {
   protocols: [],
@@ -107,7 +130,7 @@ class EventEmitter {
 /** WSClient — singleton WebSocket client. */
 export class WSClient extends EventEmitter {
   private static instance: WSClient | null = null;
-  private ws: WebSocket | null = null;
+  private ws: SocketLike | null = null;
   private config: ResolvedConfig;
   private sessionId: string | null = null;
   private seq = 0;
@@ -181,18 +204,23 @@ export class WSClient extends EventEmitter {
     const token = this.getState?.().auth.accessToken ?? this.config.accessToken ?? undefined;
 
     try {
-      const ws = new WebSocket(this.buildUrl(token), this.config.protocols);
+      const ws = (this.config.createSocket ?? createWebSocket)(this.buildUrl(token), this.config.protocols);
       this.ws = ws;
       ws.binaryType = 'arraybuffer';
+      // After disconnect() + connect(), events from the replaced socket must not touch the new one.
+      // (After a plain disconnect() this.ws is null and the close is still reported.)
+      const isStale = (): boolean => this.ws !== null && this.ws !== ws;
 
       ws.onopen = () => {
+        if (isStale()) return;
         this.isConnecting = false;
         this.reconnectAttempt = 0;
         this.startHeartbeat();
         if (token) this.send(ClientEventType.AUTHENTICATE, { token });
       };
 
-      ws.onclose = (event: CloseEvent) => {
+      ws.onclose = (event) => {
+        if (isStale()) return;
         this.isConnecting = false;
         this.stopHeartbeat();
         // Closed before session.init: settle the pending connect() instead of leaking it.
@@ -212,11 +240,13 @@ export class WSClient extends EventEmitter {
       };
 
       ws.onerror = () => {
+        if (isStale()) return;
         this.isConnecting = false;
         this.emit('error', new Error('WebSocket error'));
       };
 
-      ws.onmessage = (event: MessageEvent<string | ArrayBuffer>) => {
+      ws.onmessage = (event) => {
+        if (isStale()) return;
         this.handleMessage(event.data);
       };
     } catch (error) {

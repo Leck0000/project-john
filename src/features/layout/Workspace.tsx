@@ -8,7 +8,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
-import { isDemoMode, DEMO_SUBSYSTEMS, DEMO_TICKETS } from '../../app/demo';
+import { isDemoMode, DEMO_TICKETS } from '../../app/demo';
 import { Toaster } from '../../shared/components/Toaster';
 import { wsConnect } from '../../shared/ws/events';
 import { TopBar } from './TopBar';
@@ -17,7 +17,6 @@ import { TicketCard } from '../tickets/TicketCard';
 import { TicketDetail } from '../tickets/TicketDetail';
 import { fetchTickets, selectFilteredQueue, selectSelectedTicket, selectTicket, setQueue } from '../tickets/slice';
 import { WindowManager } from '../desktop/WindowManager';
-import { applyStateDelta } from '../desktop/slice';
 
 export function Workspace() {
   const dispatch = useAppDispatch();
@@ -27,13 +26,11 @@ export function Workspace() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
 
-  // Initial data: demo seed, or the tickets API + WebSocket when configured.
+  // Initial data: demo seed over the in-browser sim transport, or the tickets API + WebSocket when configured.
   useEffect(() => {
     if (isDemoMode()) {
       dispatch(setQueue(DEMO_TICKETS));
-      for (const [subsystem, value] of Object.entries(DEMO_SUBSYSTEMS)) {
-        dispatch(applyStateDelta({ subsystem, op: 'set', value }));
-      }
+      dispatch(wsConnect({ url: 'local://sim' }));
       return;
     }
     void dispatch(fetchTickets());

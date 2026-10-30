@@ -10,7 +10,7 @@ import React, { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { selectSelectedTicket, claimTicket } from './slice';
 import { openAppWindow } from '../desktop/slice';
-import { DEFAULT_MACHINE_ID } from '../desktop/WindowsAppsLauncher';
+import { defaultMachineId, machineLabel } from '../../app/demo';
 import { ChatPanel } from '../communication/ChatPanel';
 import { EmailThread } from '../communication/EmailThread';
 
@@ -38,7 +38,7 @@ export function TicketDetail() {
     );
   }
 
-  const machineId = ticket.relatedMachineId ?? DEFAULT_MACHINE_ID;
+  const machineId = ticket.relatedMachineId ?? defaultMachineId();
 
   const claim = async () => {
     try {
@@ -63,7 +63,7 @@ export function TicketDetail() {
             <button
               type="button"
               onClick={() =>
-                dispatch(openAppWindow({ app: 'Terminal', title: `Terminal — ${machineId}`, machineId }))
+                dispatch(openAppWindow({ app: 'Terminal', title: `Terminal — ${machineLabel(machineId)}`, machineId }))
               }
               className="rounded border border-border px-3 py-1.5 text-sm text-fg hover:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
@@ -91,7 +91,7 @@ export function TicketDetail() {
           ['Queue', ticket.queue],
           ['Priority', ticket.priority],
           ['State', ticket.state.replace('_', ' ')],
-          ['Machine', machineId],
+          ['Machine', machineLabel(machineId)],
           ['Assignee', ticket.assignedTechnicianId ?? 'Unassigned'],
           ['Created', new Date(ticket.createdAt).toLocaleString()],
           ['Evidence', `${ticket.evidence.length} item(s)`],
@@ -99,7 +99,9 @@ export function TicketDetail() {
         ].map(([label, value]) => (
           <div key={label}>
             <dt className="text-xs text-muted">{label}</dt>
-            <dd className="font-medium capitalize text-fg">{value}</dd>
+            <dd className={`font-medium text-fg ${label === 'Machine' || label === 'Requester' ? 'normal-case' : 'capitalize'}`}>
+              {value}
+            </dd>
           </div>
         ))}
       </dl>
