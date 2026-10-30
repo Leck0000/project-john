@@ -2,7 +2,7 @@
  * Engine registry — holds the one SimEngine that lives for the whole page.
  * To use your own engine, change the factory below.
  */
-import { DEMO_TICKETS } from '../app/demo';
+import { DEMO_MACHINES, DEMO_TICKETS } from '../app/demo';
 import { createStubEngine } from './stubEngine';
 import type { CreateEngine, EngineConfig, SimEngine } from './types';
 
@@ -11,7 +11,7 @@ const createEngine: CreateEngine = createStubEngine;
 let current: SimEngine | null = null;
 
 function demoConfig(): EngineConfig {
-  return { machines: [], tickets: DEMO_TICKETS };
+  return { machines: DEMO_MACHINES, tickets: DEMO_TICKETS };
 }
 
 /** Returns the page's engine, creating it from the demo config on first use. */

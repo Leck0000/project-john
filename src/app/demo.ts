@@ -10,6 +10,42 @@ export function isDemoMode(search: string = typeof window !== 'undefined' ? wind
   return new URLSearchParams(search).get('demo') === '1' || import.meta.env.VITE_DEMO === '1';
 }
 
+/** Non-demo fallback machine when no ticket is selected. */
+export const LAB_DEFAULT_MACHINE_ID = 'lab-ws01';
+
+export interface DemoMachine {
+  id: string;
+  hostname: string;
+}
+
+/** Demo machines: UUID ids (strict schemas) with human-readable hostnames. */
+export const DEMO_MACHINES: readonly DemoMachine[] = [
+  { id: '3e1a0c2b-7d4f-4a6e-9b8c-5d2f1e0a7b01', hostname: 'ws-finance-07' },
+  { id: '3e1a0c2b-7d4f-4a6e-9b8c-5d2f1e0a7b02', hostname: 'ws-ops-12' },
+  { id: '3e1a0c2b-7d4f-4a6e-9b8c-5d2f1e0a7b03', hostname: 'ws-hr-02' },
+  { id: '3e1a0c2b-7d4f-4a6e-9b8c-5d2f1e0a7b04', hostname: 'lt-sales-31' },
+  { id: '3e1a0c2b-7d4f-4a6e-9b8c-5d2f1e0a7b05', hostname: 'ws-finance-03' },
+];
+
+/** Machine the Print Spooler ticket is about (ws-hr-02). */
+const SPOOLER_MACHINE_ID = '3e1a0c2b-7d4f-4a6e-9b8c-5d2f1e0a7b03';
+
+const machineIdFor = (hostname: string): string => {
+  const machine = DEMO_MACHINES.find((m) => m.hostname === hostname);
+  if (!machine) throw new Error(`unknown demo machine ${hostname}`);
+  return machine.id;
+};
+
+/** What a human sees for a machine: its hostname if known, else the raw id. */
+export function machineLabel(machineId: string): string {
+  return DEMO_MACHINES.find((m) => m.id === machineId)?.hostname ?? machineId;
+}
+
+/** Machine used when no ticket is selected: the Spooler ticket's machine in demo mode, else the lab default. */
+export function defaultMachineId(search: string = typeof window !== 'undefined' ? window.location.search : ''): string {
+  return isDemoMode(search) ? SPOOLER_MACHINE_ID : LAB_DEFAULT_MACHINE_ID;
+}
+
 const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
 
 const ticket = (
@@ -24,7 +60,7 @@ const ticket = (
   relatedMachineId: fields.relatedMachineId,
   evidence: [],
   scoring: { technical: 0, process: 0, communication: 0 },
-  requesterId: 'demo-requester',
+  requesterId: '8a4d2c1b-6e5f-4a3b-9c8d-7e6f5a4b3c01',
   createdAt: hoursAgo(fields.age),
   updatedAt: hoursAgo(fields.age / 2),
 });
@@ -32,23 +68,23 @@ const ticket = (
 export const DEMO_TICKETS: Ticket[] = [
   ticket('5b0f6c1e-2d4a-4c8e-9f11-0a1b2c3d4e01', {
     queue: 'AD', priority: 'critical', state: 'open', age: 1,
-    category: 'User locked out after password reset', relatedMachineId: 'ws-finance-07',
+    category: 'User locked out after password reset', relatedMachineId: machineIdFor('ws-finance-07'),
   }),
   ticket('5b0f6c1e-2d4a-4c8e-9f11-0a1b2c3d4e02', {
     queue: 'networking', priority: 'high', state: 'open', age: 3,
-    category: 'No network access on 3rd floor — APIPA address', relatedMachineId: 'ws-ops-12',
+    category: 'No network access on 3rd floor — APIPA address', relatedMachineId: machineIdFor('ws-ops-12'),
   }),
   ticket('5b0f6c1e-2d4a-4c8e-9f11-0a1b2c3d4e03', {
     queue: 'helpdesk', priority: 'medium', state: 'in_progress', age: 6,
-    category: 'Print spooler keeps stopping', relatedMachineId: 'ws-hr-02',
+    category: 'Print spooler keeps stopping', relatedMachineId: machineIdFor('ws-hr-02'),
   }),
   ticket('5b0f6c1e-2d4a-4c8e-9f11-0a1b2c3d4e04', {
     queue: 'security', priority: 'high', state: 'open', age: 9,
-    category: 'Suspicious scheduled task found on laptop', relatedMachineId: 'lt-sales-31',
+    category: 'Suspicious scheduled task found on laptop', relatedMachineId: machineIdFor('lt-sales-31'),
   }),
   ticket('5b0f6c1e-2d4a-4c8e-9f11-0a1b2c3d4e05', {
     queue: 'helpdesk', priority: 'low', state: 'resolved', age: 30,
-    category: 'Mapped drive missing after login', relatedMachineId: 'ws-finance-03',
+    category: 'Mapped drive missing after login', relatedMachineId: machineIdFor('ws-finance-03'),
   }),
 ];
 
