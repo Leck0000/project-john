@@ -5,11 +5,14 @@
  * Structurally satisfies the WSClient `SocketLike` interface. Everything is
  * delivered asynchronously (setTimeout 0, FIFO) like a real socket; `close()`
  * cancels every frame still pending. Frames crossing the boundary are
- * Zod-validated in both directions: invalid client frames are ignored and
- * server payloads that fail their schema are dropped.
+ * Zod-validated in both directions: invalid client frames are ignored. A
+ * server payload that fails its schema is not sent; it is reported with
+ * console.error, and an invalid command_output is replaced by an
+ * `Engine error: invalid result: …` output (exitCode 1) so the terminal
+ * never waits on a frame that will not arrive.
  */
 
-import type { ZodType } from 'zod';
+import type { ZodError, ZodType } from 'zod';
 import {
   WSEnvelopeSchema,
   SendCommandPayloadSchema,
@@ -108,12 +111,20 @@ export class LocalSocket {
     }
 
     const timestamp = new Date().toISOString();
-    this.emit(ServerEventType.COMMAND_OUTPUT, CommandOutputPayloadSchema, {
+    const outputError = this.emit(ServerEventType.COMMAND_OUTPUT, CommandOutputPayloadSchema, {
       machineId,
       output: result.output,
       exitCode: result.exitCode,
       timestamp,
     });
+    if (outputError) {
+      this.emit(ServerEventType.COMMAND_OUTPUT, CommandOutputPayloadSchema, {
+        machineId,
+        output: `Engine error: invalid result: ${summarizeIssues(outputError)}`,
+        exitCode: 1,
+        timestamp,
+      });
+    }
     this.emitUpdates(result.updates ?? []);
     if (result.ticket) {
       this.emit(ServerEventType.TICKET_UPDATE, TicketUpdatePayloadSchema, {
@@ -144,14 +155,21 @@ export class LocalSocket {
     }
   }
 
-  /** Validate a server payload, stamp the envelope, and deliver it asynchronously. */
-  private emit<T>(t: ServerEventType, schema: ZodType<T>, payload: T): void {
+  /**
+   * Validate a server payload, stamp the envelope, and deliver it asynchronously.
+   * An invalid payload is not sent: it is logged and its ZodError returned.
+   */
+  private emit<T>(t: ServerEventType, schema: ZodType<T>, payload: T): ZodError | null {
     const checked = schema.safeParse(payload);
-    if (!checked.success) return;
+    if (!checked.success) {
+      console.error(`LocalSocket: dropped invalid ${t} frame from engine`, checked.error.issues);
+      return checked.error;
+    }
     this.seq += 1;
     const frame = { v: 1, t, sid: this.sessionId, seq: this.seq, ts: Date.now(), payload: checked.data };
     const data = JSON.stringify(frame);
     this.schedule(() => this.onmessage?.({ data }));
+    return null;
   }
 
   private schedule(fn: () => void): void {
@@ -161,6 +179,12 @@ export class LocalSocket {
     }, 0);
     this.pending.add(timer);
   }
+}
+
+function summarizeIssues(error: ZodError): string {
+  return error.issues
+    .map((issue) => `${issue.path.length > 0 ? issue.path.map(String).join('.') : '(root)'}: ${issue.message}`)
+    .join('; ');
 }
 
 export function createLocalSocketFactory(engine: SimEngine): (url: string, protocols: string[]) => LocalSocket {

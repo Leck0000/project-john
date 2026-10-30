@@ -196,6 +196,45 @@ describe('LocalSocket', () => {
     expect(CommandOutputPayloadSchema.parse(frames[0]?.payload).output).toBe('Engine error: plain string');
   });
 
+  it('invalid engine command result → Engine error command_output, not silence', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const engine = fakeEngine([], () => ({ output: 'half', exitCode: 0.5 }));
+      const { socket, frames } = await openSocket(engine);
+      socket.send(clientFrame(ClientEventType.SEND_COMMAND, { machineId: MACHINE_ID, command: 'x' }));
+      await vi.waitFor(() => expect(frames.length).toBe(1));
+      expect(frames[0]?.t).toBe('command_output');
+      const payload = CommandOutputPayloadSchema.parse(frames[0]?.payload);
+      expect(payload.machineId).toBe(MACHINE_ID);
+      expect(payload.exitCode).toBe(1);
+      expect(payload.output).toMatch(/^Engine error: invalid result: /);
+      expect(payload.output).toContain('exitCode');
+      expect(errorSpy).toHaveBeenCalled();
+      expect(socket.readyState).toBe(LocalSocket.OPEN);
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
+  it('non-UUID ticketId is reported via console.error, other frames still arrive', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const engine = fakeEngine([], () => ({
+        output: 'done',
+        exitCode: 0,
+        ticket: { ticketId: 'TKT-1', state: 'resolved' },
+      }));
+      const { socket, frames } = await openSocket(engine);
+      socket.send(clientFrame(ClientEventType.SEND_COMMAND, { machineId: MACHINE_ID, command: 'x' }));
+      await vi.waitFor(() => expect(frames.length).toBe(1));
+      await settle();
+      expect(frames.map((f) => f.t)).toEqual(['command_output']);
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('ticket_update'), expect.anything());
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
   it('non-UUID machineId is dropped', async () => {
     const engine = fakeEngine();
     const { socket, frames } = await openSocket(engine);
