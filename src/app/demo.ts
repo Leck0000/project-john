@@ -27,14 +27,14 @@ export const DEMO_MACHINES: readonly DemoMachine[] = [
   { id: '3e1a0c2b-7d4f-4a6e-9b8c-5d2f1e0a7b05', hostname: 'ws-finance-03' },
 ];
 
-/** Machine the Print Spooler ticket is about (ws-hr-02). */
-const SPOOLER_MACHINE_ID = '3e1a0c2b-7d4f-4a6e-9b8c-5d2f1e0a7b03';
-
 const machineIdFor = (hostname: string): string => {
   const machine = DEMO_MACHINES.find((m) => m.hostname === hostname);
   if (!machine) throw new Error(`unknown demo machine ${hostname}`);
   return machine.id;
 };
+
+/** Machine the Print Spooler ticket is about (ws-hr-02). */
+const SPOOLER_MACHINE_ID = machineIdFor('ws-hr-02');
 
 /** What a human sees for a machine: its hostname if known, else the raw id. */
 export function machineLabel(machineId: string): string {

@@ -235,6 +235,71 @@ describe('LocalSocket', () => {
     }
   });
 
+  it('start() throwing → session.init still sent, no state.delta, console.error, commands still work', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const engine = {
+        start: vi.fn((): SubsystemUpdate[] => {
+          throw new Error('bad snapshot');
+        }),
+        handleCommand: vi.fn((): CommandResult => ({ output: 'ok', exitCode: 0 })),
+      } satisfies SimEngine;
+      const socket = new LocalSocket('local://sim', engine);
+      const frames = attach(socket);
+      await vi.waitFor(() => expect(frames.length).toBe(1));
+      await settle();
+      expect(frames.map((f) => f.t)).toEqual(['session.init']);
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('engine.start() threw: bad snapshot'));
+      expect(socket.readyState).toBe(LocalSocket.OPEN);
+
+      frames.length = 0;
+      socket.send(clientFrame(ClientEventType.SEND_COMMAND, { machineId: MACHINE_ID, command: 'x' }));
+      await vi.waitFor(() => expect(frames.length).toBe(1));
+      expect(frames[0]?.t).toBe('command_output');
+      expect(CommandOutputPayloadSchema.parse(frames[0]?.payload)).toMatchObject({ output: 'ok', exitCode: 0 });
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
+  it('out-of-range score (150) is dropped with console.error; other frames still arrive', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const engine = fakeEngine([], () => ({
+        output: 'done',
+        exitCode: 0,
+        scoring: { ticketId: TICKET_ID, score: 150 },
+      }));
+      const { socket, frames } = await openSocket(engine);
+      socket.send(clientFrame(ClientEventType.SEND_COMMAND, { machineId: MACHINE_ID, command: 'x' }));
+      await vi.waitFor(() => expect(frames.length).toBe(1));
+      await settle();
+      expect(frames.map((f) => f.t)).toEqual(['command_output']);
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('scoring_update'), expect.anything());
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
+  it('non-integer score (42.5) is dropped too', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const engine = fakeEngine([], () => ({
+        output: 'done',
+        exitCode: 0,
+        scoring: { ticketId: TICKET_ID, score: 42.5 },
+      }));
+      const { socket, frames } = await openSocket(engine);
+      socket.send(clientFrame(ClientEventType.SEND_COMMAND, { machineId: MACHINE_ID, command: 'x' }));
+      await vi.waitFor(() => expect(frames.length).toBe(1));
+      await settle();
+      expect(frames.map((f) => f.t)).toEqual(['command_output']);
+      expect(errorSpy).toHaveBeenCalled();
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
   it('non-UUID machineId is dropped', async () => {
     const engine = fakeEngine();
     const { socket, frames } = await openSocket(engine);

@@ -78,6 +78,11 @@ describe('TerminalWindow', () => {
     expect(screen.getByTestId('terminal-window')).toContainElement(region);
   });
 
+  it('labels the terminal with the hostname, not the raw machine UUID', () => {
+    setup(false, '3e1a0c2b-7d4f-4a6e-9b8c-5d2f1e0a7b03');
+    expect(screen.getByRole('region', { name: 'Terminal for ws-hr-02' })).toBeInTheDocument();
+  });
+
   it('applies CSS variable theming', () => {
     setup(false);
     const wrapper = screen.getByTestId('terminal-window');

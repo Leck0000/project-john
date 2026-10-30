@@ -104,6 +104,26 @@ describe('EmailThread', () => {
   });
 });
 
+describe('TicketDetail detail rows', () => {
+  it('keeps Machine and Requester values in their original case', () => {
+    const { store } = setup(<TicketDetail />, true);
+    act(() => {
+      store.dispatch(setQueue(DEMO_TICKETS));
+      store.dispatch(selectTicket(TICKET));
+    });
+    const valueOf = (label: string) => {
+      const dd = screen.getByText(label, { selector: 'dt' }).nextElementSibling;
+      if (!dd) throw new Error(`no value for ${label}`);
+      return dd;
+    };
+    expect(valueOf('Machine')).not.toHaveClass('capitalize');
+    expect(valueOf('Machine')).toHaveClass('normal-case');
+    expect(valueOf('Requester')).not.toHaveClass('capitalize');
+    expect(valueOf('Requester')).toHaveClass('normal-case');
+    expect(valueOf('Queue')).toHaveClass('capitalize');
+  });
+});
+
 describe('TicketDetail communication tabs', () => {
   it('switches between chat and email for the selected ticket', () => {
     const { store } = setup(<TicketDetail />, true);

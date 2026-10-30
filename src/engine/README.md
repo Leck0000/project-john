@@ -55,6 +55,54 @@ For each `CommandResult`, the plumbing emits frames in this order:
   whole page.
 - To use your engine, change the factory in `src/engine/index.ts`.
 
+## Data shapes & gotchas
+
+Apart from the stub, every line of engine code in this folder should be yours.
+These notes tell you what the rest of the app expects back.
+
+- **Subsystem keys.** The panels listen for six subsystems, with the same keys
+  as `DEMO_SUBSYSTEMS` in `src/app/demo.ts`: `services`, `event-log`,
+  `registry`, `network`, `ad` and `filesystem`. The demo data there is a good
+  example of each shape.
+- **Subsystem shapes.** Each panel checks its data with a Zod schema. For
+  ticket 1 the two that matter are `servicesSchema` (an array of
+  `ServiceSchema`) in `src/features/desktop/ServicesPanel.tsx` and
+  `eventLogEntrySchema` (an array of `EventLogEntrySchema`) in
+  `src/features/desktop/EventViewer.tsx`. Watch the details: service `status`
+  and `startMode` are fixed lowercase words, and every event-log entry needs a
+  UUID `id`. If a value fails its panel's schema, the panel only says
+  "Unexpected <subsystem> data from server" — compare your value with the
+  schema field by field.
+- **Updates replace, they don't patch.** Each `updates[].value` replaces the
+  *whole* subsystem value. To change one service, send the complete services
+  list with that one entry changed.
+- **IDs are UUIDs.** `machineId` and `ticketId` are UUIDs, not hostnames or
+  `TKT-…` numbers. Your engine gets them from `config.machines` and
+  `config.tickets`; `config.machines` is also how you map a UUID to its
+  hostname (for example `ws-hr-02`).
+- **Score is an integer from 0 to 100.** Anything else (150, 42.5) is dropped
+  and reported in the browser console.
+
+### Where mistakes show up
+
+- `handleCommand()` throws, or returns an invalid result (for example an
+  `exitCode` that is not an integer): the terminal shows an
+  `Engine error: …` line with exit code 1.
+- An invalid `ticket`, `scoring` or `updates` entry (a non-UUID id, a bad
+  score, an unknown state): that one message is dropped and logged with
+  `console.error` in the browser console only. Nothing appears in the UI, so
+  keep the developer tools console open.
+- `start()` throws: the session still connects and commands still work, but
+  the panels get no snapshot; the error is in the browser console.
+
+### Checking your work
+
+1. Unit-test your `createEngine(config)` directly with Vitest (see
+   `stubEngine.test.ts` for how a test file is laid out). No browser needed:
+   call `start()` and `handleCommand()` and check what they return.
+2. Then try it in the app: run the dev server, open it with `?demo=1`, select
+   the Print Spooler ticket and use its terminal.
+
 ## Your checklist — ticket 1 (Print Spooler keeps stopping)
 
 - [ ] `sc query`

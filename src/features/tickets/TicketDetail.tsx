@@ -99,7 +99,9 @@ export function TicketDetail() {
         ].map(([label, value]) => (
           <div key={label}>
             <dt className="text-xs text-muted">{label}</dt>
-            <dd className="font-medium capitalize text-fg">{value}</dd>
+            <dd className={`font-medium text-fg ${label === 'Machine' || label === 'Requester' ? 'normal-case' : 'capitalize'}`}>
+              {value}
+            </dd>
           </div>
         ))}
       </dl>

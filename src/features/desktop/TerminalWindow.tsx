@@ -87,7 +87,7 @@ export function TerminalWindow({ windowId }: TerminalWindowProps) {
       data-testid="terminal-window"
       style={{ height: '100%', padding: 6, backgroundColor: 'var(--bg)', color: 'var(--fg)' }}
     >
-      <Terminal ref={term} ariaLabel={`Terminal for ${machineId}`} onData={onData} />
+      <Terminal ref={term} ariaLabel={`Terminal for ${hostname}`} onData={onData} />
     </div>
   );
 }

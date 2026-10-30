@@ -12,7 +12,7 @@
  * never waits on a frame that will not arrive.
  */
 
-import type { ZodError, ZodType } from 'zod';
+import { z, type ZodError, type ZodType } from 'zod';
 import {
   WSEnvelopeSchema,
   SendCommandPayloadSchema,
@@ -26,6 +26,14 @@ import {
   ClientEventType,
 } from './envelope';
 import type { CommandResult, SimEngine, SubsystemUpdate } from '../../engine/types';
+
+/**
+ * The engine contract says a score is an integer 0–100. The wire schema is
+ * looser, so LocalSocket checks the stricter rule before emitting.
+ */
+const EngineScoringPayloadSchema = ScoringUpdatePayloadSchema.extend({
+  score: z.number().int().min(0).max(100),
+});
 
 export class LocalSocket {
   static readonly CONNECTING = 0;
@@ -98,7 +106,16 @@ export class LocalSocket {
       userPrincipal: 'local-trainee',
       caps: ['local-sim'],
     });
-    this.emitUpdates(this.engine.start());
+    let snapshot: SubsystemUpdate[];
+    try {
+      snapshot = this.engine.start();
+    } catch (err) {
+      // The session stays open (commands still work); panels just get no snapshot.
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`LocalSocket: engine.start() threw: ${message}`);
+      return;
+    }
+    this.emitUpdates(snapshot);
   }
 
   private runCommand(machineId: string, command: string): void {
@@ -135,7 +152,7 @@ export class LocalSocket {
     }
     if (result.scoring) {
       const { ticketId, score, feedback } = result.scoring;
-      this.emit(ServerEventType.SCORING_UPDATE, ScoringUpdatePayloadSchema, {
+      this.emit(ServerEventType.SCORING_UPDATE, EngineScoringPayloadSchema, {
         ticketId,
         score,
         ...(feedback !== undefined ? { feedback } : {}),
