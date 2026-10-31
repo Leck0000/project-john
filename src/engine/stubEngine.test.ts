@@ -10,7 +10,7 @@ import { DEMO_SUBSYSTEMS, DEMO_TICKETS } from '../app/demo';
 const makeStub = (): SimEngine => createStubEngine({ machines: [], tickets: DEMO_TICKETS });
 
 describe('createStubEngine', () => {
-  it('start() returns one update per DEMO_SUBSYSTEMS key with the demo value', () => {
+  it('start() returns one update per subsystem with the initial value', () => {
     const updates = makeStub().start();
     const keys = Object.keys(DEMO_SUBSYSTEMS);
 
@@ -26,17 +26,23 @@ describe('createStubEngine', () => {
     expect(engine.start()).toEqual(engine.start());
   });
 
-  it('handleCommand() reports every command as not recognized, with no extras', () => {
-    const result = makeStub().handleCommand('any-id', 'sc query spooler');
+  it('handleCommand() runs the command and records history, with no extras', () => {
+    const engine = makeStub();
+    const result = engine.handleCommand('any-id', 'sc query spooler');
 
-    expect(result).toStrictEqual({
-      output:
-        "'sc query spooler' is not recognized as an internal or external command, operable program or batch file.",
-      exitCode: 1,
-    });
+    expect(result.output).toContain('SERVICE_NAME: Spooler');
+    expect(result.output).toContain('STATUS      : STOPPED');
+    expect(result.exitCode).toBe(0);
     expect(result).not.toHaveProperty('updates');
     expect(result).not.toHaveProperty('ticket');
     expect(result).not.toHaveProperty('scoring');
+  });
+
+  it('handleCommand() persists state across calls', () => {
+    const engine = makeStub();
+    engine.handleCommand('any-id', 'sc start spooler');
+    const after = engine.handleCommand('any-id', 'sc query spooler').output;
+    expect(after).toContain('STATUS      : RUNNING');
   });
 });
 
