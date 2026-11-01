@@ -74,14 +74,15 @@ export function TicketDetail() {
             >
               Open terminal
             </button>
-            <button
-              type="button"
-              onClick={claim}
-              disabled={ticket.state !== 'open'}
-              className="rounded bg-accent px-3 py-1.5 text-sm font-medium text-bg hover:opacity-90 disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              Claim
-            </button>
+            {ticket.state === 'open' && (
+                        <button
+                          type="button"
+                          onClick={claim}
+                          className="rounded bg-accent px-3 py-1.5 text-sm font-medium text-bg hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                        >
+                          Claim
+                        </button>
+                      )}
           </div>
         </div>
         {notice && (

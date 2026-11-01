@@ -37,7 +37,7 @@ export function TerminalWindow({ windowId }: TerminalWindowProps) {
 
   // Greeting + first prompt once the terminal is mounted.
   useEffect(() => {
-    term.current?.writeln(`Project:John remote shell — ${hostname}`);
+    term.current?.writeln('Project: John remote shell — ' + hostname);
     if (!connected) term.current?.writeln('Not connected to a lab session; commands will not run.');
     term.current?.write(prompt);
     // Only on mount: later connection changes are reported inline.
@@ -49,7 +49,9 @@ export function TerminalWindow({ windowId }: TerminalWindowProps) {
     const fresh = output.slice(written.current);
     written.current = output.length;
     if (fresh.length === 0) return;
-    term.current?.write('\r\n' + fresh.join(''));
+    term.current?.write(
+      '\r\n' + fresh.map((c) => (c.endsWith('\r\n') ? c : c + '\r\n')).join(''),
+    );
     term.current?.write('\r\n' + prompt + line.current);
   }, [output, prompt]);
 

@@ -25,9 +25,11 @@ export interface CommandResult {
   output: string;
   exitCode: number;
   updates?: SubsystemUpdate[];
-  ticket?: { ticketId: string; state: TicketState };
+  ticket?: { ticketId: string; state: TicketState; assigneeId?: string };
   /** `score` is an integer from 0 to 100. */
   scoring?: { ticketId: string; score: number; feedback?: string };
+  /** Evidence entries discovered/produced by this command. */
+  evidence?: string[];
 }
 
 /** What the engine is built from: the machines and tickets of the scenario. */

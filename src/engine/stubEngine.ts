@@ -22,8 +22,10 @@ export const createStubEngine: CreateEngine = (config) => {
     handleCommand: (_machineId, command) => {
           const { result, next } = handleCommand(state, command);
           state = next;
-          const response: { output: string; exitCode: number; scoring?: { ticketId: string; score: number; feedback?: string } } = { output: result.output, exitCode: result.exitCode };
+          const response: { output: string; exitCode: number; scoring?: { ticketId: string; score: number; feedback?: string }; ticket?: { ticketId: string; state: 'open' | 'in_progress' | 'on_hold' | 'resolved' | 'closed' }; evidence?: string[] } = { output: result.output, exitCode: result.exitCode };
           if (result.scoring) response.scoring = result.scoring;
+          if (result.ticket) response.ticket = result.ticket;
+          if (result.evidence) response.evidence = result.evidence;
           return response;
         },
   };

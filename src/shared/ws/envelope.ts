@@ -155,6 +155,7 @@ export const TicketUpdatePayloadSchema = z.object({
   ticketId: z.string().uuid(),
   status: z.string(),
   assigneeId: z.string().uuid().optional(),
+  evidence: z.array(z.string()).optional(),
   timestamp: z.string().datetime(),
 });
 export type TicketUpdatePayload = z.infer<typeof TicketUpdatePayloadSchema>;

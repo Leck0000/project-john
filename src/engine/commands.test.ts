@@ -40,7 +40,7 @@ describe('handleCommand (read)', () => {
   it('first diagnostic command transitions ticketState open -> in_progress', () => {
     const stateOpen = { ...createInitialState({ machines: [], tickets: [] }), ticketState: 'open' as const };
     const { result, next } = handleCommand(stateOpen, 'sc query spooler');
-    expect(result.ticket).toEqual({ ticketId: 'spooler-ticket', state: 'in_progress' });
+    expect(result.ticket).toEqual({ ticketId: 'spooler-ticket', state: 'in_progress', assigneeId: 'local-trainee' });
     expect(next.ticketState).toBe('in_progress');
   });
 

@@ -144,9 +144,12 @@ export class LocalSocket {
     }
     this.emitUpdates(result.updates ?? []);
     if (result.ticket) {
+      const { ticketId, state: ticketState, assigneeId } = result.ticket;
       this.emit(ServerEventType.TICKET_UPDATE, TicketUpdatePayloadSchema, {
-        ticketId: result.ticket.ticketId,
-        status: result.ticket.state,
+        ticketId,
+        status: ticketState,
+        ...(assigneeId ? { assigneeId } : {}),
+        ...(result.evidence ? { evidence: result.evidence } : {}),
         timestamp,
       });
     }
