@@ -62,6 +62,7 @@ export interface Subsystems {
 export interface MachineState {
   subsystems: Subsystems;
   history: string[];
+  ticketState: 'open' | 'in_progress' | 'on_hold' | 'resolved' | 'closed';
 }
 
 export function createInitialState(config: EngineConfig): MachineState {
@@ -77,5 +78,6 @@ export function createInitialState(config: EngineConfig): MachineState {
       filesystem: DEMO_SUBSYSTEMS.filesystem as FilesystemDrive[],
     },
     history: [],
+    ticketState: 'in_progress', // Spooler ticket starts as in_progress in demo
   };
 }
