@@ -1,4 +1,3 @@
-/** ChatPanel / EmailThread / TicketDetail tabs: sending, delivery state, requester replies. */
 import { describe, it, expect } from 'vitest';
 import { act, render, screen, fireEvent, within } from '@testing-library/react';
 import { Provider } from 'react-redux';
@@ -7,6 +6,7 @@ import communicationReducer, { receiveRequesterMessage } from './slice';
 import wsReducer, { initialWSState } from '../../shared/ws/slice';
 import ticketsReducer, { setQueue, selectTicket } from '../tickets/slice';
 import desktopReducer from '../desktop/slice';
+import scoresReducer from '../scoring/slice';
 import { WSActionType } from '../../shared/ws/events';
 import { ChatPanel } from './ChatPanel';
 import { EmailThread } from './EmailThread';
@@ -25,7 +25,7 @@ function setup(ui: React.ReactElement, connected: boolean) {
     return next(action);
   };
   const store = configureStore({
-    reducer: { communication: communicationReducer, ws: wsReducer, tickets: ticketsReducer, desktop: desktopReducer },
+    reducer: { communication: communicationReducer, ws: wsReducer, tickets: ticketsReducer, desktop: desktopReducer, scores: scoresReducer },
     preloadedState: { ws: { ...initialWSState, connected } },
     middleware: (gdm) => gdm().concat(recorder),
   });

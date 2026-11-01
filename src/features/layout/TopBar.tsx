@@ -12,6 +12,7 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import { logout } from '../auth/slice';
+import { Link } from 'react-router-dom';
 
 /** Narrow view of the auth slice that TopBar reads (tolerates an empty slice). */
 interface AuthView {
@@ -93,6 +94,16 @@ export function TopBar() {
             </div>
           </div>
         )}
+
+        {/* Navigation */}
+        <nav className="flex items-center gap-2" aria-label="Main navigation">
+          <Link
+            to="/scoring"
+            className="px-3 py-1.5 text-sm text-fg hover:text-accent rounded border border-transparent hover:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            Scoring
+          </Link>
+        </nav>
 
         {/* Theme toggle */}
         <button
