@@ -15,6 +15,8 @@ export interface CommandResult {
   output: string;
   exitCode: number;
   updates?: { subsystem: string; value: unknown }[];
+  /** `score` is an integer from 0 to 100. */
+  scoring?: { ticketId: string; score: number; feedback?: string };
 }
 
 interface HandleOutcome {
@@ -38,8 +40,14 @@ export function handleCommand(state: MachineState, line: string): HandleOutcome 
     if (svc.status === 'running') {
       return { result: { output: 'The service is already running.', exitCode: 0 }, next: state };
     }
+    const readEventLog = state.history.includes('get-eventlog');
+    const score = readEventLog ? 100 : 0;
     return {
-      result: { output: 'The Print Spooler service was started successfully.', exitCode: 0 },
+      result: {
+        output: 'The Print Spooler service was started successfully.',
+        exitCode: 0,
+        scoring: { ticketId: 'spooler-ticket', score, feedback: readEventLog ? 'Correctly checked event log before restart.' : 'Did not check event log before restart.' },
+      },
       next: {
         ...state,
         subsystems: {
@@ -56,8 +64,14 @@ export function handleCommand(state: MachineState, line: string): HandleOutcome 
   if (cmd === 'restart-service spooler') {
     const svc = state.subsystems.services.find((s) => s.name.toLowerCase() === 'spooler');
     if (!svc) return { result: { output: `Service 'spooler' not found.`, exitCode: 1 }, next: state };
+    const readEventLog = state.history.includes('get-eventlog');
+    const score = readEventLog ? 100 : 0;
     return {
-      result: { output: 'The Print Spooler service was restarted successfully.', exitCode: 0 },
+      result: {
+        output: 'The Print Spooler service was restarted successfully.',
+        exitCode: 0,
+        scoring: { ticketId: 'spooler-ticket', score, feedback: readEventLog ? 'Correctly checked event log before restart.' : 'Did not check event log before restart.' },
+      },
       next: {
         ...state,
         subsystems: {
@@ -80,7 +94,13 @@ export function handleCommand(state: MachineState, line: string): HandleOutcome 
     return { result: { output: formatServiceList(state), exitCode: 0 }, next: state };
   }
   if (cmd === 'get-eventlog') {
-    return { result: { output: formatEventLog(state), exitCode: 0 }, next: state };
+    return {
+      result: { output: formatEventLog(state), exitCode: 0 },
+      next: {
+        ...state,
+        history: [...state.history, 'get-eventlog'],
+      },
+    };
   }
   if (cmd === 'sc query') {
     return { result: { output: formatServiceList(state), exitCode: 0 }, next: state };

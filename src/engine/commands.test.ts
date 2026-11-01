@@ -61,6 +61,6 @@ describe('handleCommand (read)', () => {
   it('history accumulates across commands', () => {
     const after = handleCommand(state, 'get-eventlog').next;
     const after2 = handleCommand(after, 'sc start spooler').next;
-    expect(after2.history).toEqual(['sc start spooler']);
+    expect(after2.history).toEqual(['get-eventlog', 'sc start spooler']);
   });
 });

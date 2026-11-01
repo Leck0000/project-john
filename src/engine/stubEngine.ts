@@ -20,10 +20,12 @@ export const createStubEngine: CreateEngine = (config) => {
     start: () =>
       Object.entries(state.subsystems).map(([subsystem, value]) => ({ subsystem, value })),
     handleCommand: (_machineId, command) => {
-      const { result, next } = handleCommand(state, command);
-      state = next;
-      return { output: result.output, exitCode: result.exitCode };
-    },
+          const { result, next } = handleCommand(state, command);
+          state = next;
+          const response: { output: string; exitCode: number; scoring?: { ticketId: string; score: number; feedback?: string } } = { output: result.output, exitCode: result.exitCode };
+          if (result.scoring) response.scoring = result.scoring;
+          return response;
+        },
   };
 };
 
