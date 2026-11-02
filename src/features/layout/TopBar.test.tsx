@@ -4,6 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Provider } from 'react-redux';
+import { BrowserRouter } from 'react-router-dom';
 import { configureStore } from '@reduxjs/toolkit';
 import { TopBar } from './TopBar';
 
@@ -20,7 +21,9 @@ const makeStore = () =>
 const renderTopBar = () =>
   render(
     <Provider store={makeStore()}>
-      <TopBar />
+      <BrowserRouter>
+        <TopBar />
+      </BrowserRouter>
     </Provider>
   );
 

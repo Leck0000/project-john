@@ -1,6 +1,11 @@
-# SysDesk
+# Project:John
 
 Browser-based IT help desk simulator for technician training.
+
+A personal learning project: I'm building it to practise help desk
+troubleshooting and to learn how a simulator works by writing one. It is
+single-user and runs entirely in the browser — there are no accounts and no
+server. It is not affiliated with any commercial help desk training product.
 
 ## Quick Start
 
@@ -16,8 +21,8 @@ pnpm exec vite preview --port 3001
 Open `http://localhost:3001/?demo=1` for sample data.
 
 The base path comes from `VITE_BASE` (default `/`). To reproduce the GitHub Pages
-build locally: `VITE_BASE=/Sysdesk-simulator/ pnpm build`, then open
-`http://localhost:3001/Sysdesk-simulator/?demo=1`.
+build locally: `VITE_BASE=/project-john/ pnpm build`, then open
+`http://localhost:3001/project-john/?demo=1`.
 
 Node: >= 22.19.0 (`engines`); CI uses Node 24 (`.nvmrc`). Node 20 cannot run the
 test suite (jsdom 30 depends on undici 8, which requires Node >= 22.19).

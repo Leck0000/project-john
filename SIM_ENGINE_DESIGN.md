@@ -1,4 +1,4 @@
-# SysDesk Simulation Engine Architecture
+# Project:John Simulation Engine Architecture
 
 ## Overview
 A deterministic, browser‑based Windows 11 simulator used for technician training. The engine runs entirely in‑process (Node/TS) and exposes a WebSocket API for the front‑end. All subsystems are pure‑state machines; commands mutate state transactionally; snapshots provide durability; session isolation guarantees multi‑tenant safety.
@@ -188,4 +188,4 @@ src/
 
 ---
 
-*Document version 1.0 – generated for the SysDesk simulation engine design review.*
+*Document version 1.0 – generated for the Project:John simulation engine design review.*

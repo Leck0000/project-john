@@ -1,8 +1,8 @@
-# SysDesk — Comprehensive Simulator Architecture
+# Project:John — Comprehensive Simulator Architecture
 
 ## 1. Overview
 
-SysDesk is a **browser-based IT/help desk simulator** that runs a complete support shift in one connected workspace. Technicians claim tickets, investigate simulated Windows machines, communicate with users via AI voice, verify fixes, and earn verifiable certificates. The system scores technical accuracy, process, and communication.
+Project:John is a **browser-based IT/help desk simulator** that runs a complete support shift in one connected workspace. Technicians claim tickets, investigate simulated Windows machines, communicate with users via AI voice, verify fixes, and earn verifiable certificates. The system scores technical accuracy, process, and communication.
 
 This document is the **single authoritative reference** for the simulator's architecture, data models, API contracts, scoring engine, team mode, and deployment. All design decisions are derived from research across 9 prior art platforms (HackTheBox, TryHackMe, Microsoft Windows Simulators, CyberRange platforms, Instruqt, Strigo, Azure Lab Services, RangeForce, Immersive Labs) and three background subagent design runs.
 
@@ -700,8 +700,8 @@ All analytics read‑only, cached 30s, require `org:view_analytics`.
 
 ```bash
 # 1. Clone repo + install deps
-git clone https://github.com/yourorg/sysdesk-simulator.git
-cd sysdesk-simulator
+git clone https://github.com/Leck0000/project-john.git
+cd project-john
 npm install      # frontend + TS tooling
 pip install -r requirements.txt  # backend + Python deps
 
@@ -722,4 +722,4 @@ npm run dev     # Vite dev server on http://localhost:5173
 
 ---
 
-*Document version 1.0 — generated for the SysDesk simulation architecture review. All artifacts under C:\Users\Parzival\Documents\sysdesk\.*
+*Document version 1.0 — generated for the Project:John simulation architecture review. All artifacts under C:\Users\Parzival\Documents\project-john\.*

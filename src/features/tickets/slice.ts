@@ -21,6 +21,7 @@ export const TicketUpdatePayloadSchema = z.object({
   ticketId: z.string().uuid(),
   status: z.string(),
   assigneeId: z.string().uuid().optional(),
+  evidence: z.array(z.string()).optional(),
   timestamp: z.string().datetime(),
 });
 
@@ -186,8 +187,8 @@ export const ticketsSlice = createSlice({
     },
 
     /** Merge ticket from WebSocket ticket_update event */
-    mergeTicketUpdate: (state, action: PayloadAction<TicketUpdatePayload>) => {
-      const { ticketId, status, assigneeId, timestamp } = action.payload;
+        mergeTicketUpdate: (state, action: PayloadAction<TicketUpdatePayload>) => {
+      const { ticketId, status, assigneeId, timestamp, evidence } = action.payload;
       const index = state.queue.findIndex((t: Ticket) => t.id === ticketId);
       if (index !== -1) {
         const ticket = state.queue[index]!;
@@ -196,6 +197,7 @@ export const ticketsSlice = createSlice({
           state: status as Ticket['state'],
           assignedTechnicianId: assigneeId ?? ticket.assignedTechnicianId,
           updatedAt: timestamp,
+          evidence: evidence ? [...ticket.evidence, ...evidence] : ticket.evidence,
         };
       }
     },

@@ -9,7 +9,7 @@ test('app smoke test - page loads and root element renders', async ({ page }) =>
   // Check that the app root element is present
   await expect(page.getByTestId('app-root')).toBeVisible({ timeout: 15000 });
   // Check that the page has proper title
-  await expect(page).toHaveTitle(/SysDesk/);
+  await expect(page).toHaveTitle(/Project:John/);
 });
 
 test('theme toggle exists and is accessible', async ({ page }) => {

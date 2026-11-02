@@ -1,5 +1,8 @@
 import type { Middleware } from '@reduxjs/toolkit';
+import { z } from 'zod';
 import { WSClient } from '../ws/client';
+import { createLocalSocketFactory } from '../ws/localSocket';
+import { getEngine } from '../../engine';
 import {
   isWSAction,
   isWSMessageAction,
@@ -14,9 +17,19 @@ import {
   CommandOutputPayloadSchema,
   StateDeltaPayloadSchema,
   RequesterMessagePayloadSchema,
+  TicketUpdatePayloadSchema,
 } from '../ws/envelope';
 import { appendTerminalOutput, applyStateDelta } from '../../features/desktop/slice';
 import { receiveRequesterMessage } from '../../features/communication/slice';
+import { mergeTicketUpdate } from '../../features/tickets/slice';
+
+/** ticket_update payload whose status is one of the five ticket states. */
+const TicketUpdateSchema = TicketUpdatePayloadSchema.extend({
+  status: z.enum(['open', 'in_progress', 'on_hold', 'resolved', 'closed']),
+});
+
+/** URLs with this prefix run over the in-browser sim engine instead of a WebSocket. */
+const LOCAL_URL_PREFIX = 'local:';
 
 // WebSocket middleware: intercepts Redux WS actions and manages the
 // single WebSocket connection via WSClient. All WebSocket messages go
@@ -31,7 +44,11 @@ export const wsMiddleware: Middleware = (store) => (next) => (action) => {
 
   if (isWSAction(action) && action.type === WSActionType.CONNECT) {
     const { url, accessToken, protocols } = action.payload as WSConnectPayload;
-    client = WSClient.getInstance({ url, accessToken, protocols });
+    client = WSClient.getInstance(
+      url.startsWith(LOCAL_URL_PREFIX)
+        ? { url, accessToken, protocols, createSocket: createLocalSocketFactory(getEngine()) }
+        : { url, accessToken, protocols }
+    );
     client.setStore(store.dispatch, store.getState);
     client.connect().catch(() => {
       // Connection failure — already dispatched by WSClient (ws/error)
@@ -74,6 +91,12 @@ export const wsMiddleware: Middleware = (store) => (next) => (action) => {
       if (parsed.success) {
         const { subsystem, op, value } = parsed.data;
         store.dispatch(applyStateDelta({ subsystem, op, value }));
+      }
+    }
+    if (envelope.t === ServerEventType.TICKET_UPDATE) {
+      const parsed = TicketUpdateSchema.safeParse(envelope.payload);
+      if (parsed.success) {
+        store.dispatch(mergeTicketUpdate(parsed.data));
       }
     }
     if (envelope.t === ServerEventType.SCORING_UPDATE) {

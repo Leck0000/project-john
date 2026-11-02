@@ -272,7 +272,7 @@ export function WindowManager() {
   return (
     <div
       data-testid="window-manager"
-      style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 20 }}
+      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 100, pointerEvents: 'none', overflow: 'hidden', zIndex: 20 }}
     >
       {windows.map((w) => (
         <DesktopWindowFrame key={w.id} desktopWindow={w} zIndex={10 + zIndexOf(w.id)} active={w.id === activeWindowId}>
