@@ -70,14 +70,12 @@ describe('Spooler ticket end-to-end flow', () => {
     // Verify service status changed
     const finalSpooler = result2.next.subsystems.services.find((s) => s.name === 'Spooler');
     expect(finalSpooler?.status).toBe('running');
-    
-    state = result2.next;
 
     // Step 3: Overall verification
     // Total evidence > 0
     const totalEvidence = (result1.result.evidence?.length || 0) + (result2.result.evidence?.length || 0);
     expect(totalEvidence).toBeGreaterThan(0);
-    
+
     // Score section would appear on ticket (hasScore = true when technical/process/communication > 0)
     // This is verified by the scoring object being present with score 100
     expect(result2.result.scoring!.score).toBe(100);
