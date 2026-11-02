@@ -4,7 +4,7 @@ import { createInitialState } from './machineState';
 
 describe('scoring logic', () => {
   const config = { machines: [], tickets: [] };
-  const ticketId = 'spooler-ticket';
+  const ticketId = '5b0f6c1e-2d4a-4c8e-9f11-0a1b2c3d4e03';
 
   it('scores 100 when get-eventlog was read before restart-service', () => {
     let state = createInitialState(config);
